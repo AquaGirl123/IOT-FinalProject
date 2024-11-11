@@ -11,12 +11,13 @@ List of components:
 - Soil moisture
 - Red Led
 - Fan
+- Sensor data
 - 2 LEDS
 - Breadboard
 
 Software:
 - AWS IoT core
-- ThingsBoard
+- ThingsBoard (for monitoring and control)
 - Python Libaries
   
 Solution Overview (with Architecture diagram)
