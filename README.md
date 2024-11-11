@@ -19,9 +19,6 @@ Software:
 - AWS IoT core
 - ThingsBoard (for monitoring and control)
 - Python Libaries
-  
-Solution Overview (with Architecture diagram)
-- j
 
 Implementation
 - Install Hardware
@@ -30,4 +27,4 @@ Implementation
 - AWS
 - ThingsBoard
 
-Mockup:
+
