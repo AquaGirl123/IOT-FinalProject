@@ -45,6 +45,7 @@ def read_temp_sensor(sensor_id):
         print(f"Temperature sensor {sensor_id} not found.")
         return None
 
+
 # Soil Moisture 
 # Reads the moisture level using ADC0832. Higher ADC values mean drier soil.
 def read_soil_moisture():
@@ -56,10 +57,49 @@ def read_soil_moisture():
 def read_light_intensity():
     return ADC0832.getADC(1)  # channel 1
 
+# Fan
+# Activates the fan if the temperature exceeds the TEMP_THRESHOLD which is 25
+def control_fan(temp):
+    if temp > TEMP_THRESHOLD:
+        GPIO.output(FAN, GPIO.HIGH)
+        time.sleep(5)
+        GPIO.output(FAN, GPIO.LOW)
+
+# RED LED - Water pump
+# Activates the water pump (RED_LED) if soil moisture falls below the SOIL_MOISTURE_THRESHOLD which is 150
+def control_water_pump(moisture):
+    if moisture < SOIL_MOISTURE_THRESHOLD:
+        GPIO.output(RED_LED, GPIO.HIGH)
+        time.sleep(5)
+        GPIO.output(RED_LED, GPIO.LOW)
+
+# Photoresister 
+# Turns the grow lights on/off based on light intensity
+def control_grow_lights(light_level):
+    if light_level < LIGHT_THRESHOLD:
+        GPIO.output(BLUE_LED, GPIO.HIGH) # light on
+    else:
+        GPIO.output(BLUE_LED, GPIO.LOW) # light off
+ 
+def actuator_manual_control():
+    """Simulate manual actuator control from a dashboard."""
+    print("hi")
+    while True:
+        command = input("Enter command (fan/pump/light/exit): ").strip().lower()
+        if command == "fan":
+            GPIO.output(FAN, not GPIO.input(FAN))
+            print("Fan toggled.")
+        elif command == "pump":
+            GPIO.output(RED_LED, not GPIO.input(RED_LED))
+            print("Water pump toggled.")
+        elif command == "light":
+            GPIO.output(BLUE_LED, not GPIO.input(BLUE_LED))
+            print("Grow light toggled.")
+        elif command == "exit":
+            break
+    
 def main():
     try:
-        # Initialize MQTT connection
-        print("Initializing MQTT connection...")
         while True:
             temp = read_temp_sensor(TEMPERATURE_SENSOR)
             moisture = read_soil_moisture()
@@ -68,6 +108,11 @@ def main():
             print(f"Temperature: {temp:.2f} °C")
             print(f"Soil Moisture: {moisture}")
             print(f"Light Intensity: {light_level}")
+
+            if temp:
+                control_fan(temp)
+            control_water_pump(moisture)
+            control_grow_lights(light_level)
 
             time.sleep(1)
     except KeyboardInterrupt:
