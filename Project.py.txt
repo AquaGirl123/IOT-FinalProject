@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+import RPi.GPIO as GPIO
+import time
+import ADC0832
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+
+FAN = 5 # HVAC
+RED_LED = 20 # WaterPump
+BLUE_LED = 21 # Grow lights - lighting when its dark
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(FAN, GPIO.OUT)
+GPIO.setup(RED_LED, GPIO.OUT)
+GPIO.setup(BLUE_LED, GPIO.OUT)
+
+# Thresholds for FAN
+TEMP_THRESHOLD = 25.0 # Fan is activated if higher than 25
+
+# Use ADC0832converter 
+# Water pump (RED_LED) is activated for 5 seconds if moisture falls below 150
+SOIL_MOISTURE_THRESHOLD = 150 
+
+# Use ADC0832 (0-255, low = dark)
+# Grow lights (BLUE_LED) turn on if the light intensity is below 100
+LIGHT_THRESHOLD = 100
+
+# DS18B20 sesnor 
+TEMPERATURE_SENSOR = "28-3c01b556342e"  
+
+# Initialize ADC0832
+ADC0832.setup()
+
+# DS18B20 sensor
+# Reads the temperature from a DS18B20 sensor file
+# Converts readings to Celsius
+def read_temp_sensor(sensor_id):
+    try:
+        with open(f"/sys/bus/w1/devices/{sensor_id}/w1_slave") as tfile:
+            text = tfile.read()
+        second_line = text.split("\n")[1]
+        temperature_data = second_line.split(" ")[9]
+        temperature = float(temperature_data[2:]) / 1000
+        return temperature
+    except FileNotFoundError:
+        print(f"Temperature sensor {sensor_id} not found.")
+        return None
+
+# Soil Moisture 
+# Reads the moisture level using ADC0832. Higher ADC values mean drier soil.
+def read_soil_moisture():
+    adc_value = ADC0832.getADC(0) # channel 0
+    return 255 - adc_value  # Higher value = drier soil
+
+# Photoresister Module
+# Reads the light level using ADC0832. Lower values mean darker conditions
+def read_light_intensity():
+    return ADC0832.getADC(1)  # channel 1
+
+def main():
+    try:
+        # Initialize MQTT connection
+        print("Initializing MQTT connection...")
+        while True:
+            temp = read_temp_sensor(TEMPERATURE_SENSOR)
+            moisture = read_soil_moisture()
+            light_level = read_light_intensity()
+
+            print(f"Temperature: {temp:.2f} °C")
+            print(f"Soil Moisture: {moisture}")
+            print(f"Light Intensity: {light_level}")
+
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Exiting program...")
+    finally:
+        GPIO.cleanup()
+        ADC0832.destroy()
+
+if __name__ == "__main__":
+    main()
