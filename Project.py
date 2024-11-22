@@ -9,7 +9,9 @@ import config
 import json
 
 FAN = 5 # HVAC
-RED_LED = 20 # WaterPump
+RGB_LED_RED = 20 # WaterPump
+RGB_LED_GREEN = 6 # WaterPump
+RGB_LED_BLUE = 19 # WaterPump
 BLUE_LED = 21 # Grow lights - lighting when its dark
 
 GPIO.setmode(GPIO.BCM)
