@@ -9,15 +9,22 @@ import config
 import json
 
 FAN = 5 # HVAC
-RGB_LED_RED = 20 # WaterPump
+BLUE_LED = 21 # Grow lights - lighting when its dark
+RGB_LED_RED = 20 # WaterPump - soil
 RGB_LED_GREEN = 6 # WaterPump
 RGB_LED_BLUE = 19 # WaterPump
-BLUE_LED = 21 # Grow lights - lighting when its dark
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(FAN, GPIO.OUT)
-GPIO.setup(RED_LED, GPIO.OUT)
 GPIO.setup(BLUE_LED, GPIO.OUT)
+
+GPIO.setup(RGB_LED_RED, GPIO.OUT)
+GPIO.setup(RGB_LED_GREEN, GPIO.OUT)
+GPIO.setup(RGB_LED_BLUE, GPIO.OUT)
+
+GPIO.output(RGB_LED_RED, GPIO.LOW)
+GPIO.output(RGB_LED_GREEN, GPIO.LOW)
+GPIO.output(RGB_LED_BLUE, GPIO.LOW)
 
 CLIENT_ID = 'projectIOT'
 TOPIC = 'champlain/sensor/10/data'
@@ -28,8 +35,8 @@ THINGSBOARD_TOKEN = 'rtKIlzb1Ep5pb8FtqWMS'
 TB_TOPIC = 'v1/devices/me/telemetry'
 
 # MQTT Client Setup for ThingsBoard
-client = mqtt.Client()
-client.username_pw_set(THINGSBOARD_TOKEN)
+#client = mqtt.Client()
+#client.username_pw_set(THINGSBOARD_TOKEN)
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -53,7 +60,6 @@ TEMPERATURE_SENSOR = "28-3c01b556342e"
 ADC0832.setup()
 
 def get_user_inputs():
-    """Prompt user to input thresholds."""
     temp_threshold = float(input("Enter the temperature threshold for the fan (°C): "))
     soil_moisture_threshold = int(input("Enter the soil moisture threshold for the water pump: "))
     light_threshold = int(input("Enter the light intensity threshold for grow lights: "))
@@ -87,9 +93,16 @@ def control_fan(temp, temp_threshold):
 
 def control_water_pump(moisture, soil_moisture_threshold):
     if moisture < soil_moisture_threshold:
-        GPIO.output(RED_LED, GPIO.HIGH)
-        time.sleep(5)
-        GPIO.output(RED_LED, GPIO.LOW)
+        # Turn on green LED and water pump
+        GPIO.output(RGB_LED_GREEN, GPIO.LOW)
+        GPIO.output(RGB_LED_RED, GPIO.HIGH)
+        print("Water pump ON")
+        time.sleep(5)  # Simulating pump active time
+    else:
+        # Turn on red LED to indicate no water pump action
+        GPIO.output(RGB_LED_GREEN, GPIO.HIGH)
+        GPIO.output(RGB_LED_RED, GPIO.LOW)
+        print("Water pump OFF")
 
 def control_grow_lights(light_level, light_threshold):
     if light_level < light_threshold:
@@ -98,15 +111,13 @@ def control_grow_lights(light_level, light_threshold):
         GPIO.output(BLUE_LED, GPIO.LOW) # light off
 
 def actuator_manual_control():
-    """Simulate manual actuator control from a dashboard."""
-    print("hi")
     while True:
         command = input("Enter command (fan/pump/light/exit): ").strip().lower()
         if command == "fan":
             GPIO.output(FAN, not GPIO.input(FAN))
             print("Fan toggled.")
         elif command == "pump":
-            GPIO.output(RED_LED, not GPIO.input(RED_LED))
+            ## GPIO.output(RGB_LED_RED, not GPIO.input(RGB_LED_RED))
             print("Water pump toggled.")
         elif command == "light":
             GPIO.output(BLUE_LED, not GPIO.input(BLUE_LED))
@@ -116,7 +127,6 @@ def actuator_manual_control():
 
 def main():
     temp_threshold, soil_moisture_threshold, light_threshold = get_user_inputs()
-    
     try:
         # Initialize MQTT connection
         print("Initializing MQTT connection...")
