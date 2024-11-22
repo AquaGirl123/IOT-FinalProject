@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 import RPi.GPIO as GPIO
 import time
+import threading
 import ADC0832
+import os
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+import config
+import json
 
 FAN = 5 # HVAC
 RED_LED = 20 # WaterPump
@@ -12,6 +16,33 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(FAN, GPIO.OUT)
 GPIO.setup(RED_LED, GPIO.OUT)
 GPIO.setup(BLUE_LED, GPIO.OUT)
+
+CLIENT_ID = 'projectIOT'
+TOPIC = 'champlain/sensor/10/data'
+
+# ThingBoard
+THINGSBOARD_HOST = "demo.thingsboard.io"
+THINGSBOARD_TOKEN = 'rtKIlzb1Ep5pb8FtqWMS'
+TB_TOPIC = 'v1/devices/me/telemetry'
+
+# MQTT Client Setup for ThingsBoard
+client = mqtt.Client()
+client.username_pw_set(THINGSBOARD_TOKEN)
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("Connected to ThingsBoard successfully.")
+    else:
+        print(f"Connection failed with code {rc}")
+
+# Configure the MQTT client
+myMQTTClient = AWSIoTMQTTClient(config.CLIENT_ID)
+myMQTTClient.configureEndpoint(config.AWS_HOST, config.AWS_PORT)
+myMQTTClient.configureCredentials(config.AWS_ROOT_CA, config.AWS_PRIVATE_KEY, config.AWS_CLIENT_CERT)
+myMQTTClient.configureOfflinePublishQueueing(config.OFFLINE_QUEUE_SIZE)
+myMQTTClient.configureDrainingFrequency(config.DRAINING_FREQ)
+myMQTTClient.configureConnectDisconnectTimeout(config.CONN_DISCONN_TIMEOUT)
+myMQTTClient.configureMQTTOperationTimeout(config.MQTT_OPER_TIMEOUT)
 
 # Thresholds for FAN
 TEMP_THRESHOLD = 25.0 # Fan is activated if higher than 25
@@ -80,7 +111,8 @@ def control_grow_lights(light_level):
         GPIO.output(BLUE_LED, GPIO.HIGH) # light on
     else:
         GPIO.output(BLUE_LED, GPIO.LOW) # light off
- 
+
+# 
 def actuator_manual_control():
     """Simulate manual actuator control from a dashboard."""
     print("hi")
@@ -97,9 +129,15 @@ def actuator_manual_control():
             print("Grow light toggled.")
         elif command == "exit":
             break
-    
+
 def main():
     try:
+        # Initialize MQTT connection
+        print("Initializing MQTT connection...")
+        myMQTTClient.connect()
+
+        threading.Thread(target=actuator_manual_control, daemon=True).start()
+
         while True:
             temp = read_temp_sensor(TEMPERATURE_SENSOR)
             moisture = read_soil_moisture()
@@ -114,12 +152,22 @@ def main():
             control_water_pump(moisture)
             control_grow_lights(light_level)
 
+            # Publish sensor data
+            message = {
+                "temperature": temp,
+                "moisture": moisture,
+                "light": light_level,
+                "timestamp": time.time()
+            }
+            myMQTTClient.publish(config.TOPIC, json.dumps(message), 1)
+
             time.sleep(1)
     except KeyboardInterrupt:
         print("Exiting program...")
     finally:
         GPIO.cleanup()
         ADC0832.destroy()
+        myMQTTClient.disconnect()
 
 if __name__ == "__main__":
     main()
