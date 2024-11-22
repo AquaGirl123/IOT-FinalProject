@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 
 import RPi.GPIO as GPIO
 import time
 import threading
@@ -44,26 +44,20 @@ myMQTTClient.configureDrainingFrequency(config.DRAINING_FREQ)
 myMQTTClient.configureConnectDisconnectTimeout(config.CONN_DISCONN_TIMEOUT)
 myMQTTClient.configureMQTTOperationTimeout(config.MQTT_OPER_TIMEOUT)
 
-# Thresholds for FAN
-TEMP_THRESHOLD = 25.0 # Fan is activated if higher than 25
-
-# Use ADC0832converter 
-# Water pump (RED_LED) is activated for 5 seconds if moisture falls below 150
-SOIL_MOISTURE_THRESHOLD = 150 
-
-# Use ADC0832 (0-255, low = dark)
-# Grow lights (BLUE_LED) turn on if the light intensity is below 100
-LIGHT_THRESHOLD = 100
-
-# DS18B20 sesnor 
+# DS18B20 sensor 
 TEMPERATURE_SENSOR = "28-3c01b556342e"  
 
 # Initialize ADC0832
 ADC0832.setup()
 
+def get_user_inputs():
+    """Prompt user to input thresholds."""
+    temp_threshold = float(input("Enter the temperature threshold for the fan (°C): "))
+    soil_moisture_threshold = int(input("Enter the soil moisture threshold for the water pump: "))
+    light_threshold = int(input("Enter the light intensity threshold for grow lights: "))
+    return temp_threshold, soil_moisture_threshold, light_threshold
+
 # DS18B20 sensor
-# Reads the temperature from a DS18B20 sensor file
-# Converts readings to Celsius
 def read_temp_sensor(sensor_id):
     try:
         with open(f"/sys/bus/w1/devices/{sensor_id}/w1_slave") as tfile:
@@ -76,43 +70,31 @@ def read_temp_sensor(sensor_id):
         print(f"Temperature sensor {sensor_id} not found.")
         return None
 
-
-# Soil Moisture 
-# Reads the moisture level using ADC0832. Higher ADC values mean drier soil.
 def read_soil_moisture():
     adc_value = ADC0832.getADC(0) # channel 0
     return 255 - adc_value  # Higher value = drier soil
 
-# Photoresister Module
-# Reads the light level using ADC0832. Lower values mean darker conditions
 def read_light_intensity():
     return ADC0832.getADC(1)  # channel 1
 
-# Fan
-# Activates the fan if the temperature exceeds the TEMP_THRESHOLD which is 25
-def control_fan(temp):
-    if temp > TEMP_THRESHOLD:
+def control_fan(temp, temp_threshold):
+    if temp > temp_threshold:
         GPIO.output(FAN, GPIO.HIGH)
         time.sleep(5)
         GPIO.output(FAN, GPIO.LOW)
 
-# RED LED - Water pump
-# Activates the water pump (RED_LED) if soil moisture falls below the SOIL_MOISTURE_THRESHOLD which is 150
-def control_water_pump(moisture):
-    if moisture < SOIL_MOISTURE_THRESHOLD:
+def control_water_pump(moisture, soil_moisture_threshold):
+    if moisture < soil_moisture_threshold:
         GPIO.output(RED_LED, GPIO.HIGH)
         time.sleep(5)
         GPIO.output(RED_LED, GPIO.LOW)
 
-# Photoresister 
-# Turns the grow lights on/off based on light intensity
-def control_grow_lights(light_level):
-    if light_level < LIGHT_THRESHOLD:
+def control_grow_lights(light_level, light_threshold):
+    if light_level < light_threshold:
         GPIO.output(BLUE_LED, GPIO.HIGH) # light on
     else:
         GPIO.output(BLUE_LED, GPIO.LOW) # light off
 
-# 
 def actuator_manual_control():
     """Simulate manual actuator control from a dashboard."""
     print("hi")
@@ -131,6 +113,8 @@ def actuator_manual_control():
             break
 
 def main():
+    temp_threshold, soil_moisture_threshold, light_threshold = get_user_inputs()
+    
     try:
         # Initialize MQTT connection
         print("Initializing MQTT connection...")
@@ -148,11 +132,10 @@ def main():
             print(f"Light Intensity: {light_level}")
 
             if temp:
-                control_fan(temp)
-            control_water_pump(moisture)
-            control_grow_lights(light_level)
+                control_fan(temp, temp_threshold)
+            control_water_pump(moisture, soil_moisture_threshold)
+            control_grow_lights(light_level, light_threshold)
 
-            # Publish sensor data
             message = {
                 "temperature": temp,
                 "moisture": moisture,
