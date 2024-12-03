@@ -29,6 +29,7 @@ Implementation
 - Install Hardware --> connect sensors and actuators to Raspberry Pi
 - Test Hardware --> ensure all sensors and actuators work correctly
 - Develop scripts
+- Ability to set threshold in terminal at runtime 
   
 - AWS
 ![image](https://github.com/user-attachments/assets/3945bb89-1c81-40d0-bce3-467d3ed316e3)
