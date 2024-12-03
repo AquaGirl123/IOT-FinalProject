@@ -11,7 +11,7 @@ The Smart Greenhouse Controller uses a Raspberry Pi to monitor temperature, soil
 
 List of components:
 - Raspberry Pi
-- Temperature sensor - DS18B20 
+- Temperature sensor - DS18B20
 - Light intensity - Photoresistor
 - Soil moisture
 - Red Led - water pump (actuator)
