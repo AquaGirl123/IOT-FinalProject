@@ -7,6 +7,7 @@ Introduction: This project aims to implement a smart greenhouse controller using
 
 Solution Overview: 
 The Smart Greenhouse Controller uses a Raspberry Pi to monitor temperature, soil moisture, and light in a greenhouse, automatically activating a water pump, fan, and grow lights as needed. Users can view real-time data via the ThingsBoard dashboard, with data securely managed through AWS IoT Core and DynamoDB.
+![image](https://github.com/user-attachments/assets/7c12fcfd-d0e7-42f6-afc1-f6a7d7b53577)
 
 List of components:
 - Raspberry Pi
@@ -28,7 +29,9 @@ Implementation
 - Install Hardware --> connect sensors and actuators to Raspberry Pi
 - Test Hardware --> ensure all sensors and actuators work correctly
 - Develop scripts
-- AWS
+- AWS 
 - ThingsBoard
+
+  
 
 
