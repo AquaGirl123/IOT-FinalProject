@@ -29,8 +29,13 @@ Implementation
 - Install Hardware --> connect sensors and actuators to Raspberry Pi
 - Test Hardware --> ensure all sensors and actuators work correctly
 - Develop scripts
-- AWS 
+  
+- AWS
+![image](https://github.com/user-attachments/assets/3945bb89-1c81-40d0-bce3-467d3ed316e3)
+![image](https://github.com/user-attachments/assets/e82874f1-6a22-4c9d-b2e6-2ed7b9ca1a71)
+
 - ThingsBoard
+![image](https://github.com/user-attachments/assets/1b8df954-538d-499c-9e0c-845722bd24b2)
 
   
 
